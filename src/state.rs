@@ -2,14 +2,14 @@ use bevy::prelude::*;
 use neat::NeuralNetworkTopology;
 use neat::rand::thread_rng;
 
-const POPULATION_SIZE: usize = 16;
+pub const POPULATION_SIZE: usize = 16;
 
 #[derive(Resource)]
 pub struct EvoState {
     pub genomes: Vec<NeuralNetworkTopology<3, 3>>,
-    // We now store fitness alongside the genomes.
     pub fitness: Vec<f32>, 
     pub generation: u64,
+    pub evolution_requested: bool, // Added this flag
 }
 
 impl Default for EvoState {
@@ -22,9 +22,9 @@ impl Default for EvoState {
 
         Self {
             genomes,
-            // Initialize all fitness scores to 0.
             fitness: vec![0.0; POPULATION_SIZE], 
             generation: 0,
+            evolution_requested: false, // Default to false
         }
     }
 }

@@ -3,7 +3,7 @@ use neat::{NeuralNetwork, NeuralNetworkTopology};
 
 /// Generates a 32x32 image by evaluating a neural network topology as a CPPN.
 pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> egui::ColorImage {
-    let mut network = NeuralNetwork::from(topology);
+    let network = NeuralNetwork::from(topology);
     let width = 32;
     let height = 32;
     let mut image = egui::ColorImage::new([width, height], egui::Color32::BLACK);
