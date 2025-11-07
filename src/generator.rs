@@ -1,8 +1,6 @@
 use bevy_egui::egui;
 use neat::{NeuralNetwork, NeuralNetworkTopology};
 
-/// Generates a 32x32 image by evaluating a neural network topology as a CPPN,
-/// normalizing each color channel to maximize the dynamic range.
 pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> egui::ColorImage {
     let network = NeuralNetwork::from(topology);
     let width = 32;

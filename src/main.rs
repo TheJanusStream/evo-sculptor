@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
-// Declare the new modules
 mod sculpt;
 mod generator;
 mod state;
@@ -10,7 +9,6 @@ mod ui;
 mod interaction;
 mod evolution;
 
-// Constants and Components that are shared across modules live here
 use crate::state::POPULATION_SIZE;
 
 #[derive(Component)]
@@ -35,7 +33,6 @@ fn main() {
             PanOrbitCameraPlugin,
         ))
         .init_resource::<state::EvoState>()
-        // Use the new module paths to add the systems
         .add_systems(Startup, ui::setup_scene)
         .add_systems(Update, (ui::ui_system, interaction::raycast_system, interaction::update_selection_materials).chain())
         .add_systems(Update, (evolution::evolve_system, evolution::update_meshes_system).chain())

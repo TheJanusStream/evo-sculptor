@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy::render::mesh::Indices;
 use bevy_egui::EguiContexts;
 
-// Import necessary items from other local modules
 use crate::{state, Selectable};
 
 pub fn raycast_system(

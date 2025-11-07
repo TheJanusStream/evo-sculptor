@@ -9,7 +9,7 @@ pub struct EvoState {
     pub genomes: Vec<NeuralNetworkTopology<3, 3>>,
     pub fitness: Vec<f32>, 
     pub generation: u64,
-    pub evolution_requested: bool, // Added this flag
+    pub evolution_requested: bool,
 }
 
 impl Default for EvoState {
@@ -24,7 +24,7 @@ impl Default for EvoState {
             genomes,
             fitness: vec![0.0; POPULATION_SIZE], 
             generation: 0,
-            evolution_requested: false, // Default to false
+            evolution_requested: false,
         }
     }
 }

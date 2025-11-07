@@ -3,7 +3,6 @@ use neat::rand::Rng;
 use neat::CrossoverReproduction;
 use std::mem;
 
-// Import necessary items from other local modules
 use crate::{generator, sculpt, state, Selectable, POPULATION_SIZE};
 
 pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {

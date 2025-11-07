@@ -3,7 +3,6 @@ use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy_egui::{egui, EguiContexts};
 use bevy_panorbit_camera::PanOrbitCamera;
 
-// Import necessary items from other local modules
 use crate::{generator, sculpt, state, Selectable};
 
 pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoState>) {
