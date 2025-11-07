@@ -5,6 +5,8 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use neat::rand::Rng;
 use neat::CrossoverReproduction;
 use std::mem;
+// --- Add the new camera imports ---
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 mod sculpt;
 mod generator;
@@ -31,6 +33,7 @@ fn main() {
                 ..default()
             }),
             EguiPlugin,
+            PanOrbitCameraPlugin, // --- Add the camera plugin here ---
         ))
         .init_resource::<state::EvoState>()
         .add_systems(Startup, setup_scene)
@@ -39,6 +42,7 @@ fn main() {
         .run();
 }
 
+// --- ui_system remains unchanged ---
 fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoState>) {
     egui::Window::new("Evo-Sculptor Controls").show(contexts.ctx_mut(), |ui| {
         ui.heading(format!("Generation: {}", evo_state.generation));
@@ -55,8 +59,8 @@ fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoState>)
     });
 }
 
-// --- setup_scene, raycast_system, ray_mesh_intersection, and update_selection_materials remain unchanged. ---
 
+// --- setup_scene is modified to spawn the new camera ---
 fn setup_scene(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -93,10 +97,22 @@ fn setup_scene(
         ));
     }
 
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-12.0, 15.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    // --- Spawn the new interactive camera ---
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_xyz(-12.0, 15.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },
+        PanOrbitCamera {
+            // Set the focus to the center of our grid
+            focus: Vec3::ZERO,
+            // Set the orbit button
+            button_orbit: MouseButton::Right,
+            // Set the pan button
+            button_pan: MouseButton::Middle,
+            ..default()
+        },
+    ));
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -109,6 +125,7 @@ fn setup_scene(
     });
 }
 
+// --- raycast_system, ray_mesh_intersection, evolve_system, update_meshes_system, and update_selection_materials remain unchanged ---
 fn raycast_system(
     mut contexts: EguiContexts,
     windows: Query<&Window>,
@@ -197,15 +214,12 @@ fn ray_mesh_intersection(ray: &Ray, mesh: &Mesh) -> Option<f32> {
     None
 }
 
-// --- CORRECTED SYSTEM: evolve_system ---
-/// Performs selection and breeding to create the next generation of genomes.
 fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     if !evo_state.evolution_requested {
         return;
     }
     println!("Evolving generation {}...", evo_state.generation);
-
-    // Use mem::take to gain ownership and avoid simultaneous mutable borrows.
+    
     let genomes = mem::take(&mut evo_state.genomes);
     let fitnesses = mem::take(&mut evo_state.fitness);
 
@@ -216,17 +230,25 @@ fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     
     let mut champions: Vec<_> =
         population_with_fitness.into_iter()
-        .filter(|(_, fitness)| *fitness > 0.0) // Only keep selected genomes
+        .filter(|(_, fitness)| *fitness > 0.0)
         .map(|(genome, _)| genome)
         .collect();
     
-    // If no champions were selected, repopulate from the best of the last generation
     if champions.is_empty() {
-        println!("No champions selected. Repopulating from the previous generation's best.");
-        let best_genome = evo_state.genomes.first().unwrap().clone(); // Failsafe if sorting was arbitrary
-        champions.push(best_genome);
+        println!("No champions selected! This is a bug. Repopulating with random new genomes.");
+        let mut rng = neat::rand::thread_rng();
+        evo_state.genomes = (0..POPULATION_SIZE)
+            .map(|_| neat::NeuralNetworkTopology::new(0.1, 1, &mut rng))
+            .collect();
+        evo_state.generation += 1;
+        evo_state.fitness = vec![0.0; POPULATION_SIZE];
+        evo_state.evolution_requested = false;
+        return;
     }
     
+    let champions_count = (POPULATION_SIZE / 2).max(1);
+    champions.truncate(champions_count);
+
     let mut rng = neat::rand::thread_rng();
     let mut next_generation = champions.clone();
     
@@ -246,16 +268,13 @@ fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     println!("Evolution complete. Now at generation {}.", evo_state.generation);
 }
 
-// --- CORRECTED SYSTEM: update_meshes_system ---
-/// Updates the meshes in-place with the new generation's geometry and resets selection.
 fn update_meshes_system(
     mut query: Query<(&mut Selectable, &Handle<Mesh>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     evo_state: Res<state::EvoState>,
 ) {
-    // is_changed() is true on the frame the resource is mutated.
     if evo_state.is_changed() && !evo_state.is_added() {
-        if !evo_state.evolution_requested { // Only update if evolution is done
+        if !evo_state.evolution_requested {
             println!("Updating meshes for new generation...");
             for (mut selectable, mesh_handle) in query.iter_mut() {
                 if let Some(mesh) = meshes.get_mut(mesh_handle) {
@@ -268,7 +287,6 @@ fn update_meshes_system(
                     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, sculpt_data.vertices);
                     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, sculpt_data.normals);
                     
-                    // Reset the selection state for the next round
                     selectable.is_selected = false;
                 }
             }

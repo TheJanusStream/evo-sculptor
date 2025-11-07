@@ -9,3 +9,4 @@ bevy_egui = "0.24.0"
 bytemuck = "1.24.0"
 genetic-rs = { version = "1.0.0", features = ["crossover"] }
 neat = { version = "0.5.1", features = ["crossover"] }
+bevy_panorbit_camera = "0.10.0"
