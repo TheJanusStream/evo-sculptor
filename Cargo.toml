@@ -1,0 +1,11 @@
+[package]
+name = "evo-sculptor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = "0.12.1"
+bevy_egui = "0.24.0"
+bytemuck = "1.24.0"
+genetic-rs = "1.0.0"
+neat = "0.5.1"
