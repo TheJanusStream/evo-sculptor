@@ -1,16 +1,16 @@
-use bevy::prelude::*;
-use neat::{NeuralNetworkTopology, ActivationFn, activation_fn};
-use neat::activation::{ActivationScope, sigmoid, relu, linear_activation};
-use neat::rand::{thread_rng, Rng};
-use std::sync::Arc;
 use crate::activations::*;
+use bevy::prelude::*;
+use neat::activation::{linear_activation, relu, sigmoid, ActivationScope};
+use neat::rand::{thread_rng, Rng};
+use neat::{activation_fn, ActivationFn, NeuralNetworkTopology};
+use std::sync::Arc;
 
 pub const POPULATION_SIZE: usize = 16;
 
 #[derive(Resource)]
 pub struct EvoState {
     pub genomes: Vec<NeuralNetworkTopology<3, 3>>,
-    pub fitness: Vec<f32>, 
+    pub fitness: Vec<f32>,
     pub generation: u64,
     pub evolution_requested: bool,
     pub debug_requested: bool,
@@ -19,7 +19,7 @@ pub struct EvoState {
 impl Default for EvoState {
     fn default() -> Self {
         let mut rng = thread_rng();
-        
+
         let mut genomes: Vec<NeuralNetworkTopology<3, 3>> = (0..POPULATION_SIZE)
             .map(|_| NeuralNetworkTopology::new(0.2, 3, &mut rng))
             .collect();
@@ -43,7 +43,8 @@ impl Default for EvoState {
             for neuron_arc in &genome.output_layer {
                 let mut neuron = neuron_arc.write().unwrap();
                 // Select a random function from our manually created list
-                let new_activation = output_activations[rng.gen_range(0..output_activations.len())].clone();
+                let new_activation =
+                    output_activations[rng.gen_range(0..output_activations.len())].clone();
                 neuron.activation = new_activation;
             }
         }
@@ -51,7 +52,7 @@ impl Default for EvoState {
 
         Self {
             genomes,
-            fitness: vec![0.0; POPULATION_SIZE], 
+            fitness: vec![0.0; POPULATION_SIZE],
             generation: 0,
             evolution_requested: false,
             debug_requested: false,

@@ -13,9 +13,12 @@ pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> e
     let mut g_values = Vec::with_capacity(width * height);
     let mut b_values = Vec::with_capacity(width * height);
 
-    let mut min_r = f32::MAX; let mut max_r = f32::MIN;
-    let mut min_g = f32::MAX; let mut max_g = f32::MIN;
-    let mut min_b = f32::MAX; let mut max_b = f32::MIN;
+    let mut min_r = f32::MAX;
+    let mut max_r = f32::MIN;
+    let mut min_g = f32::MAX;
+    let mut max_g = f32::MIN;
+    let mut min_b = f32::MAX;
+    let mut max_b = f32::MIN;
 
     for y in 0..height {
         for x in 0..width {
@@ -24,7 +27,7 @@ pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> e
             let dist_from_center = (norm_x.powi(2) + norm_y.powi(2)).sqrt();
 
             let inputs = [norm_x, norm_y, dist_from_center];
-            
+
             network.flush_state();
             let outputs = network.predict(inputs);
 
@@ -36,9 +39,12 @@ pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> e
             g_values.push(g);
             b_values.push(b);
 
-            min_r = min_r.min(r); max_r = max_r.max(r);
-            min_g = min_g.min(g); max_g = max_g.max(g);
-            min_b = min_b.min(b); max_b = max_b.max(b);
+            min_r = min_r.min(r);
+            max_r = max_r.max(r);
+            min_g = min_g.min(g);
+            max_g = max_g.max(g);
+            min_b = min_b.min(b);
+            max_b = max_b.max(b);
         }
     }
 
@@ -48,10 +54,22 @@ pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> e
 
     // --- PASS 2: Normalize raw values and create the final image ---
     for (i, pixel) in image.pixels.iter_mut().enumerate() {
-        let norm_r = if range_r < EPSILON { 0.5 } else { (r_values[i] - min_r) / range_r };
-        let norm_g = if range_g < EPSILON { 0.5 } else { (g_values[i] - min_g) / range_g };
-        let norm_b = if range_b < EPSILON { 0.5 } else { (b_values[i] - min_b) / range_b };
-        
+        let norm_r = if range_r < EPSILON {
+            0.5
+        } else {
+            (r_values[i] - min_r) / range_r
+        };
+        let norm_g = if range_g < EPSILON {
+            0.5
+        } else {
+            (g_values[i] - min_g) / range_g
+        };
+        let norm_b = if range_b < EPSILON {
+            0.5
+        } else {
+            (b_values[i] - min_b) / range_b
+        };
+
         *pixel = egui::Color32::from_rgb(
             (norm_r.clamp(0.0, 1.0) * 255.0) as u8,
             (norm_g.clamp(0.0, 1.0) * 255.0) as u8,

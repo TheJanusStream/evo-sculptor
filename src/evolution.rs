@@ -11,24 +11,33 @@ pub fn log_activation_distribution(mut evo_state: ResMut<state::EvoState>) {
         return;
     }
 
-    println!("\n--- Activation Function Distribution (Generation {}) ---", evo_state.generation);
+    println!(
+        "\n--- Activation Function Distribution (Generation {}) ---",
+        evo_state.generation
+    );
     let mut distribution: HashMap<String, usize> = HashMap::new();
 
     for genome in &evo_state.genomes {
         // Check input layer
         for neuron_arc in &genome.input_layer {
             let neuron = neuron_arc.read().unwrap();
-            *distribution.entry(format!("{:?}", neuron.activation)).or_insert(0) += 1;
+            *distribution
+                .entry(format!("{:?}", neuron.activation))
+                .or_insert(0) += 1;
         }
         // Check hidden layer
         for neuron_arc in &genome.hidden_layers {
             let neuron = neuron_arc.read().unwrap();
-            *distribution.entry(format!("{:?}", neuron.activation)).or_insert(0) += 1;
+            *distribution
+                .entry(format!("{:?}", neuron.activation))
+                .or_insert(0) += 1;
         }
         // Check output layer
         for neuron_arc in &genome.output_layer {
             let neuron = neuron_arc.read().unwrap();
-            *distribution.entry(format!("{:?}", neuron.activation)).or_insert(0) += 1;
+            *distribution
+                .entry(format!("{:?}", neuron.activation))
+                .or_insert(0) += 1;
         }
     }
 
@@ -51,15 +60,14 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     let genomes = mem::take(&mut evo_state.genomes);
     let fitnesses = mem::take(&mut evo_state.fitness);
 
-    let population_with_fitness: Vec<_> =
-        genomes.into_iter().zip(fitnesses.into_iter()).collect();
+    let population_with_fitness: Vec<_> = genomes.into_iter().zip(fitnesses).collect();
 
-        let champions: Vec<_> = population_with_fitness
+    let champions: Vec<_> = population_with_fitness
         .iter()
         .filter(|(_, fitness)| *fitness > 0.0)
         .map(|(genome, _)| genome.clone())
         .collect();
-    
+
     let parents = if champions.is_empty() {
         println!("No champions selected! Using the entire previous generation as parents.");
         population_with_fitness
@@ -71,7 +79,7 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     };
     let mut rng = neat::rand::thread_rng();
     let mut next_generation = Vec::with_capacity(POPULATION_SIZE);
-    
+
     while next_generation.len() < POPULATION_SIZE {
         let parent1 = &parents[rng.gen_range(0..parents.len())];
         let parent2 = &parents[rng.gen_range(0..parents.len())];
@@ -85,7 +93,10 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     evo_state.fitness = vec![0.0; POPULATION_SIZE];
     evo_state.evolution_requested = false;
 
-    println!("Evolution complete. Now at generation {}.", evo_state.generation);
+    println!(
+        "Evolution complete. Now at generation {}.",
+        evo_state.generation
+    );
 }
 
 pub fn update_meshes_system(
@@ -93,22 +104,19 @@ pub fn update_meshes_system(
     mut meshes: ResMut<Assets<Mesh>>,
     evo_state: Res<state::EvoState>,
 ) {
-    if evo_state.is_changed() && !evo_state.is_added() {
-        if !evo_state.evolution_requested {
-            println!("Updating meshes for new generation...");
-            for (mut selectable, mesh_handle) in query.iter_mut() {
-                if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                    
-                    let new_topology = &evo_state.genomes[selectable.index];
+    if evo_state.is_changed() && !evo_state.is_added() && !evo_state.evolution_requested {
+        println!("Updating meshes for new generation...");
+        for (mut selectable, mesh_handle) in query.iter_mut() {
+            if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                let new_topology = &evo_state.genomes[selectable.index];
 
-                    let image = generator::generate_image_from_topology(new_topology);
-                    let sculpt_data = sculpt::create_sculpt_mesh(&image, 5.0);
+                let image = generator::generate_image_from_topology(new_topology);
+                let sculpt_data = sculpt::create_sculpt_mesh(&image, 5.0);
 
-                    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, sculpt_data.vertices);
-                    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, sculpt_data.normals);
-                    
-                    selectable.is_selected = false;
-                }
+                mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, sculpt_data.vertices);
+                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, sculpt_data.normals);
+
+                selectable.is_selected = false;
             }
         }
     }

@@ -2,13 +2,13 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
-mod sculpt;
+mod activations;
+mod evolution;
 mod generator;
+mod interaction;
+mod sculpt;
 mod state;
 mod ui;
-mod interaction;
-mod evolution;
-mod activations;
 
 use crate::state::POPULATION_SIZE;
 
@@ -36,8 +36,19 @@ fn main() {
         ))
         .init_resource::<state::EvoState>()
         .add_systems(Startup, ui::setup_scene)
-        .add_systems(Update, (ui::ui_system, interaction::raycast_system, interaction::update_selection_materials, evolution::log_activation_distribution).chain())
-        .add_systems(Update, (ui::ui_system, interaction::raycast_system, interaction::update_selection_materials).chain())
-        .add_systems(Update, (evolution::evolve_system, evolution::update_meshes_system).chain())
+        .add_systems(
+            Update,
+            (
+                ui::ui_system,
+                interaction::raycast_system,
+                interaction::update_selection_materials,
+                evolution::log_activation_distribution,
+            )
+                .chain(),
+        )
+        .add_systems(
+            Update,
+            (evolution::evolve_system, evolution::update_meshes_system).chain(),
+        )
         .run();
 }

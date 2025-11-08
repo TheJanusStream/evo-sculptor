@@ -1,7 +1,10 @@
 // src/activations.rs
-use neat::{activation_fn, activation::{batch_register_activation, ActivationScope}, ActivationFn};
-use std::sync::Arc;
+use neat::{
+    activation::{batch_register_activation, ActivationScope},
+    activation_fn, ActivationFn,
+};
 use std::f32::consts::E;
+use std::sync::Arc;
 
 /// Sine activation function for periodic patterns.
 pub fn sin_activation(n: f32) -> f32 {

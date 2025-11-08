@@ -11,10 +11,8 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
         ui.separator();
 
         ui.horizontal(|ui| {
-            if ui.button("Evolve").clicked() {
-                if !evo_state.evolution_requested {
-                    evo_state.evolution_requested = true;
-                }
+            if ui.button("Evolve").clicked() && !evo_state.evolution_requested {
+                evo_state.evolution_requested = true;
             }
             if ui.button("Reset Population").clicked() {
                 println!("Reset button clicked! Generating new random population.");
@@ -54,6 +52,8 @@ pub fn setup_scene(
                 mesh: handle,
                 material: materials.add(StandardMaterial {
                     base_color: Color::rgb(0.8, 0.7, 0.6),
+                    metallic: 0.2,
+                    perceptual_roughness: 0.6,
                     ..default()
                 }),
                 transform: Transform::from_xyz(x, 0.0, z),

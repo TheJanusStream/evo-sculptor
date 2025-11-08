@@ -20,7 +20,7 @@ pub fn create_sculpt_mesh(image: &egui::ColorImage, size: f32) -> SculptMeshData
             [x, y, z]
         })
         .collect();
-    
+
     let mut indices: Vec<u32> = Vec::with_capacity((width - 1) * (height - 1) * 6);
     for y in 0..(height - 1) {
         for x in 0..(width - 1) {
@@ -34,7 +34,7 @@ pub fn create_sculpt_mesh(image: &egui::ColorImage, size: f32) -> SculptMeshData
             indices.push(base + width as u32 + 1);
         }
     }
-    
+
     let normals: Vec<[f32; 3]> = vec![[0.0, 1.0, 0.0]; vertices.len()];
 
     SculptMeshData {

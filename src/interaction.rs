@@ -4,6 +4,7 @@ use bevy_egui::EguiContexts;
 
 use crate::{state, Selectable};
 
+#[allow(clippy::too_many_arguments)]
 pub fn raycast_system(
     mut contexts: EguiContexts,
     windows: Query<&Window>,
@@ -49,7 +50,8 @@ pub fn raycast_system(
                 if let Some(entity) = closest_entity {
                     if let Ok((_, mut selectable, _)) = selectables.get_mut(entity) {
                         selectable.is_selected = !selectable.is_selected;
-                        evo_state.fitness[selectable.index] = if selectable.is_selected { 1.0 } else { 0.0 };
+                        evo_state.fitness[selectable.index] =
+                            if selectable.is_selected { 1.0 } else { 0.0 };
                     }
                 }
             }
@@ -58,8 +60,10 @@ pub fn raycast_system(
 }
 
 fn ray_mesh_intersection(ray: &Ray, mesh: &Mesh) -> Option<f32> {
-    if let (Some(bevy::render::mesh::VertexAttributeValues::Float32x3(vertices)), Some(Indices::U32(indices))) =
-        (mesh.attribute(Mesh::ATTRIBUTE_POSITION), mesh.indices())
+    if let (
+        Some(bevy::render::mesh::VertexAttributeValues::Float32x3(vertices)),
+        Some(Indices::U32(indices)),
+    ) = (mesh.attribute(Mesh::ATTRIBUTE_POSITION), mesh.indices())
     {
         for i in (0..indices.len()).step_by(3) {
             let v0 = Vec3::from(vertices[indices[i] as usize]);
@@ -71,16 +75,22 @@ fn ray_mesh_intersection(ray: &Ray, mesh: &Mesh) -> Option<f32> {
             let pvec = ray.direction.cross(edge2);
             let det = edge1.dot(pvec);
 
-            if det.abs() < 1e-6 { continue; }
+            if det.abs() < 1e-6 {
+                continue;
+            }
 
             let inv_det = 1.0 / det;
             let tvec = ray.origin - v0;
             let u = tvec.dot(pvec) * inv_det;
-            if u < 0.0 || u > 1.0 { continue; }
+            if !(0.0..=1.0).contains(&u) {
+                continue;
+            }
 
             let qvec = tvec.cross(edge1);
             let v = ray.direction.dot(qvec) * inv_det;
-            if v < 0.0 || u + v > 1.0 { continue; }
+            if v < 0.0 || u + v > 1.0 {
+                continue;
+            }
 
             let t = edge2.dot(qvec) * inv_det;
             if t > 1e-6 {
