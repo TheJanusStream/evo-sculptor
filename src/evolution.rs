@@ -10,52 +10,44 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
         return;
     }
     println!("Evolving generation {}...", evo_state.generation);
-    
+
     let genomes = mem::take(&mut evo_state.genomes);
     let fitnesses = mem::take(&mut evo_state.fitness);
 
-    let mut population_with_fitness: Vec<_> =
+    let population_with_fitness: Vec<_> =
         genomes.into_iter().zip(fitnesses.into_iter()).collect();
 
-    population_with_fitness.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    
-    let mut champions: Vec<_> =
-        population_with_fitness.into_iter()
+        let champions: Vec<_> = population_with_fitness
+        .iter()
         .filter(|(_, fitness)| *fitness > 0.0)
-        .map(|(genome, _)| genome)
+        .map(|(genome, _)| genome.clone())
         .collect();
     
-    if champions.is_empty() {
-        println!("No champions selected! This is a bug. Repopulating with random new genomes.");
-        let mut rng = neat::rand::thread_rng();
-        evo_state.genomes = (0..POPULATION_SIZE)
-            .map(|_| neat::NeuralNetworkTopology::new(0.1, 1, &mut rng))
-            .collect();
-        evo_state.generation += 1;
-        evo_state.fitness = vec![0.0; POPULATION_SIZE];
-        evo_state.evolution_requested = false;
-        return;
-    }
-    
-    let champions_count = (POPULATION_SIZE / 2).max(1);
-    champions.truncate(champions_count);
-
+    let parents = if champions.is_empty() {
+        println!("No champions selected! Using the entire previous generation as parents.");
+        population_with_fitness
+            .into_iter()
+            .map(|(genome, _)| genome)
+            .collect()
+    } else {
+        champions
+    };
     let mut rng = neat::rand::thread_rng();
-    let mut next_generation = champions.clone();
+    let mut next_generation = Vec::with_capacity(POPULATION_SIZE);
     
     while next_generation.len() < POPULATION_SIZE {
-        let parent1 = &champions[rng.gen_range(0..champions.len())];
-        let parent2 = &champions[rng.gen_range(0..champions.len())];
+        let parent1 = &parents[rng.gen_range(0..parents.len())];
+        let parent2 = &parents[rng.gen_range(0..parents.len())];
 
         let child = parent1.crossover(parent2, &mut rng);
         next_generation.push(child);
     }
-    
+
     evo_state.genomes = next_generation;
     evo_state.generation += 1;
     evo_state.fitness = vec![0.0; POPULATION_SIZE];
     evo_state.evolution_requested = false;
-    
+
     println!("Evolution complete. Now at generation {}.", evo_state.generation);
 }
 

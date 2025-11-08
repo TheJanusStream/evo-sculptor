@@ -12,10 +12,13 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
 
         ui.horizontal(|ui| {
             if ui.button("Evolve").clicked() {
-                evo_state.evolution_requested = true;
+                if !evo_state.evolution_requested {
+                    evo_state.evolution_requested = true;
+                }
             }
             if ui.button("Reset Population").clicked() {
-                println!("Reset button clicked!");
+                println!("Reset button clicked! Generating new random population.");
+                *evo_state = state::EvoState::default();
             }
         });
     });
@@ -46,7 +49,10 @@ pub fn setup_scene(
         commands.spawn((
             PbrBundle {
                 mesh: handle,
-                material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+                material: materials.add(StandardMaterial {
+                    base_color: Color::rgb(0.8, 0.7, 0.6),
+                    ..default()
+                }),
                 transform: Transform::from_xyz(x, 0.0, z),
                 ..default()
             },
