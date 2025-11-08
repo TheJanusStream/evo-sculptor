@@ -20,6 +20,9 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                 println!("Reset button clicked! Generating new random population.");
                 *evo_state = state::EvoState::default();
             }
+            if ui.button("Log Activations").clicked() {
+                evo_state.debug_requested = true;
+            }
         });
     });
 }
@@ -31,7 +34,7 @@ pub fn setup_scene(
     evo_state: Res<state::EvoState>,
 ) {
     let grid_size = 4;
-    let spacing = 6.0;
+    let spacing = 10.0;
 
     for (i, topology) in evo_state.genomes.iter().enumerate() {
         let x = (i % grid_size) as f32 * spacing - (spacing * (grid_size - 1) as f32) / 2.0;

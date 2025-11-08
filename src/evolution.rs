@@ -1,9 +1,46 @@
 use bevy::prelude::*;
 use neat::rand::Rng;
 use neat::CrossoverReproduction;
+use std::collections::HashMap;
 use std::mem;
 
 use crate::{generator, sculpt, state, Selectable, POPULATION_SIZE};
+
+pub fn log_activation_distribution(mut evo_state: ResMut<state::EvoState>) {
+    if !evo_state.debug_requested {
+        return;
+    }
+
+    println!("\n--- Activation Function Distribution (Generation {}) ---", evo_state.generation);
+    let mut distribution: HashMap<String, usize> = HashMap::new();
+
+    for genome in &evo_state.genomes {
+        // Check input layer
+        for neuron_arc in &genome.input_layer {
+            let neuron = neuron_arc.read().unwrap();
+            *distribution.entry(format!("{:?}", neuron.activation)).or_insert(0) += 1;
+        }
+        // Check hidden layer
+        for neuron_arc in &genome.hidden_layers {
+            let neuron = neuron_arc.read().unwrap();
+            *distribution.entry(format!("{:?}", neuron.activation)).or_insert(0) += 1;
+        }
+        // Check output layer
+        for neuron_arc in &genome.output_layer {
+            let neuron = neuron_arc.read().unwrap();
+            *distribution.entry(format!("{:?}", neuron.activation)).or_insert(0) += 1;
+        }
+    }
+
+    for (name, count) in &distribution {
+        // The debug format for ActivationFn includes a newline, so we trim it.
+        println!("- {}: {}", name.trim(), count);
+    }
+    println!("---\n");
+
+    // Reset the flag
+    evo_state.debug_requested = false;
+}
 
 pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     if !evo_state.evolution_requested {

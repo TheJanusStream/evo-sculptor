@@ -8,6 +8,7 @@ mod state;
 mod ui;
 mod interaction;
 mod evolution;
+mod activations;
 
 use crate::state::POPULATION_SIZE;
 
@@ -18,6 +19,7 @@ struct Selectable {
 }
 
 fn main() {
+    activations::register_custom_activations();
     App::new()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
@@ -34,6 +36,7 @@ fn main() {
         ))
         .init_resource::<state::EvoState>()
         .add_systems(Startup, ui::setup_scene)
+        .add_systems(Update, (ui::ui_system, interaction::raycast_system, interaction::update_selection_materials, evolution::log_activation_distribution).chain())
         .add_systems(Update, (ui::ui_system, interaction::raycast_system, interaction::update_selection_materials).chain())
         .add_systems(Update, (evolution::evolve_system, evolution::update_meshes_system).chain())
         .run();
