@@ -105,10 +105,7 @@ pub fn update_meshes_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut evo_state: ResMut<state::EvoState>,
 ) {
-    if evo_state.is_changed()
-        && !evo_state.is_added()
-        && !evo_state.evolution_requested
-        && evo_state.redraw_requested
+    if evo_state.redraw_requested
     {
         println!("Updating meshes for new generation...");
         for (mut selectable, mesh_handle) in query.iter_mut() {
