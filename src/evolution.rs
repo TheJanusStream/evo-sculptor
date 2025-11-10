@@ -1,10 +1,10 @@
 use bevy::prelude::*;
-use neat::rand::Rng;
 use neat::CrossoverReproduction;
+use neat::rand::Rng;
 use std::collections::HashMap;
 use std::mem;
 
-use crate::{generator, sculpt, state, Selectable, POPULATION_SIZE};
+use crate::{POPULATION_SIZE, Selectable, generator, sculpt, state};
 
 pub fn log_activation_distribution(mut evo_state: ResMut<state::EvoState>) {
     if !evo_state.debug_requested {
@@ -92,6 +92,7 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     evo_state.generation += 1;
     evo_state.fitness = vec![0.0; POPULATION_SIZE];
     evo_state.evolution_requested = false;
+    evo_state.redraw_requested = true;
 
     println!(
         "Evolution complete. Now at generation {}.",
@@ -100,24 +101,30 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
 }
 
 pub fn update_meshes_system(
-    mut query: Query<(&mut Selectable, &Handle<Mesh>)>,
+    mut query: Query<(&mut Selectable, &Mesh3d)>,
     mut meshes: ResMut<Assets<Mesh>>,
-    evo_state: Res<state::EvoState>,
+    mut evo_state: ResMut<state::EvoState>,
 ) {
-    if evo_state.is_changed() && !evo_state.is_added() && !evo_state.evolution_requested {
+    if evo_state.is_changed()
+        && !evo_state.is_added()
+        && !evo_state.evolution_requested
+        && evo_state.redraw_requested
+    {
         println!("Updating meshes for new generation...");
         for (mut selectable, mesh_handle) in query.iter_mut() {
             if let Some(mesh) = meshes.get_mut(mesh_handle) {
                 let new_topology = &evo_state.genomes[selectable.index];
 
                 let image = generator::generate_image_from_topology(new_topology);
-                let sculpt_data = sculpt::create_sculpt_mesh(&image, 5.0);
+                let sculpt_data = sculpt::create_sculpt_mesh(&image, 5.0, evo_state.stitching_type);
 
                 mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, sculpt_data.vertices);
-                mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, sculpt_data.normals);
+                mesh.insert_indices(sculpt_data.indices);
+                mesh.compute_smooth_normals();
 
                 selectable.is_selected = false;
             }
         }
+        evo_state.redraw_requested = false;
     }
 }

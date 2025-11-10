@@ -1,11 +1,11 @@
-use bevy_egui::egui;
+use bevy_egui::egui::{self, Color32};
 use neat::{NeuralNetwork, NeuralNetworkTopology};
 
 pub fn generate_image_from_topology(topology: &NeuralNetworkTopology<3, 3>) -> egui::ColorImage {
     let network = NeuralNetwork::from(topology);
     let width = 32;
     let height = 32;
-    let mut image = egui::ColorImage::new([width, height], egui::Color32::BLACK);
+    let mut image = egui::ColorImage::new([width, height], vec![Color32::BLACK; width * height]);
     const EPSILON: f32 = 1e-6;
 
     // --- PASS 1: Collect raw f32 outputs and find min/max for each channel ---

@@ -1,16 +1,21 @@
 use bevy_egui::egui;
 
+use crate::state::StitchingType;
+
 pub struct SculptMeshData {
     pub vertices: Vec<[f32; 3]>,
-    pub normals: Vec<[f32; 3]>,
-    pub indices: Vec<u32>,
+    pub indices: bevy::mesh::Indices,
 }
 
-pub fn create_sculpt_mesh(image: &egui::ColorImage, size: f32) -> SculptMeshData {
+pub fn create_sculpt_mesh(
+    image: &egui::ColorImage,
+    size: f32,
+    _stitching_type: StitchingType,
+) -> SculptMeshData {
     let width = image.width();
     let height = image.height();
 
-    let vertices: Vec<[f32; 3]> = image
+    let base_vertices: Vec<[f32; 3]> = image
         .pixels
         .iter()
         .map(|pixel| {
@@ -35,11 +40,8 @@ pub fn create_sculpt_mesh(image: &egui::ColorImage, size: f32) -> SculptMeshData
         }
     }
 
-    let normals: Vec<[f32; 3]> = vec![[0.0, 1.0, 0.0]; vertices.len()];
-
     SculptMeshData {
-        vertices,
-        normals,
-        indices,
+        vertices: base_vertices,
+        indices: bevy::mesh::Indices::U32(indices),
     }
 }

@@ -7,6 +7,15 @@ use std::sync::Arc;
 
 pub const POPULATION_SIZE: usize = 16;
 
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub enum StitchingType {
+    #[default]
+    Plane,
+    Sphere,
+    Cylinder,
+    Torus,
+}
+
 #[derive(Resource)]
 pub struct EvoState {
     pub genomes: Vec<NeuralNetworkTopology<3, 3>>,
@@ -14,6 +23,8 @@ pub struct EvoState {
     pub generation: u64,
     pub evolution_requested: bool,
     pub debug_requested: bool,
+    pub stitching_type: StitchingType,
+    pub redraw_requested: bool,
 }
 
 impl Default for EvoState {
@@ -56,6 +67,8 @@ impl Default for EvoState {
             generation: 0,
             evolution_requested: false,
             debug_requested: false,
+            stitching_type: StitchingType::default(),
+            redraw_requested: true, // Request a redraw for the initial population
         }
     }
 }

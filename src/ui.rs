@@ -1,28 +1,74 @@
+use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
-use bevy::render::mesh::{Indices, PrimitiveTopology};
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{EguiContexts, egui};
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::{generator, sculpt, state, Selectable};
+use crate::{Selectable, generator, sculpt, state};
 
 pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoState>) {
-    egui::Window::new("Evo-Sculptor Controls").show(contexts.ctx_mut(), |ui| {
-        ui.heading(format!("Generation: {}", evo_state.generation));
-        ui.separator();
+    if let Ok(ctx) = contexts.ctx_mut() {
+        egui::Window::new("Evo-Sculptor Controls").show(ctx, |ui| {
+            ui.heading(format!("Generation: {}", evo_state.generation));
+            ui.separator();
 
-        ui.horizontal(|ui| {
-            if ui.button("Evolve").clicked() && !evo_state.evolution_requested {
-                evo_state.evolution_requested = true;
-            }
-            if ui.button("Reset Population").clicked() {
-                println!("Reset button clicked! Generating new random population.");
-                *evo_state = state::EvoState::default();
-            }
-            if ui.button("Log Activations").clicked() {
-                evo_state.debug_requested = true;
-            }
+            ui.horizontal(|ui| {
+                if ui.button("Evolve").clicked() && !evo_state.evolution_requested {
+                    evo_state.evolution_requested = true;
+                }
+                if ui.button("Reset Population").clicked() {
+                    println!("Reset button clicked! Generating new random population.");
+                    *evo_state = state::EvoState::default();
+                }
+                if ui.button("Log Activations").clicked() {
+                    evo_state.debug_requested = true;
+                }
+            });
+            ui.separator();
+            ui.heading("Stitching Type");
+            ui.horizontal(|ui| {
+                if ui
+                    .radio_value(
+                        &mut evo_state.stitching_type,
+                        state::StitchingType::Plane,
+                        "Plane",
+                    )
+                    .clicked()
+                {
+                    evo_state.set_changed();
+                }
+                if ui
+                    .radio_value(
+                        &mut evo_state.stitching_type,
+                        state::StitchingType::Sphere,
+                        "Sphere",
+                    )
+                    .clicked()
+                {
+                    evo_state.set_changed();
+                }
+                if ui
+                    .radio_value(
+                        &mut evo_state.stitching_type,
+                        state::StitchingType::Cylinder,
+                        "Cylinder",
+                    )
+                    .clicked()
+                {
+                    evo_state.set_changed();
+                }
+                if ui
+                    .radio_value(
+                        &mut evo_state.stitching_type,
+                        state::StitchingType::Torus,
+                        "Torus",
+                    )
+                    .clicked()
+                {
+                    evo_state.set_changed();
+                }
+            });
         });
-    });
+    }
 }
 
 pub fn setup_scene(
@@ -39,53 +85,87 @@ pub fn setup_scene(
         let z = (i / grid_size) as f32 * spacing - (spacing * (grid_size - 1) as f32) / 2.0;
 
         let image = generator::generate_image_from_topology(topology);
-        let sculpt_data = sculpt::create_sculpt_mesh(&image, 5.0);
+        let sculpt_data = sculpt::create_sculpt_mesh(&image, 5.0, evo_state.stitching_type);
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut mesh = Mesh::new(
+            bevy::mesh::PrimitiveTopology::TriangleList,
+            RenderAssetUsages::RENDER_WORLD | RenderAssetUsages::MAIN_WORLD,
+        );
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, sculpt_data.vertices);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, sculpt_data.normals);
-        mesh.set_indices(Some(Indices::U32(sculpt_data.indices)));
-        let handle = meshes.add(mesh);
+        mesh.insert_indices(sculpt_data.indices);
+        mesh.compute_normals();
 
-        commands.spawn((
-            PbrBundle {
-                mesh: handle,
-                material: materials.add(StandardMaterial {
-                    base_color: Color::rgb(0.8, 0.7, 0.6),
-                    metallic: 0.2,
-                    perceptual_roughness: 0.6,
-                    ..default()
-                }),
-                transform: Transform::from_xyz(x, 0.0, z),
-                ..default()
-            },
-            Selectable {
-                index: i,
-                is_selected: false,
-            },
-        ));
+        let handle = meshes.add(mesh);
+        let material_handle = materials.add(StandardMaterial {
+            base_color: Color::srgb(0.8, 0.7, 0.6),
+            metallic: 0.2,
+            perceptual_roughness: 0.6,
+            ..default()
+        });
+        commands
+            .spawn((
+                Mesh3d(handle),
+                MeshMaterial3d(material_handle),
+                Transform::from_xyz(x, 0.0, z),
+                Selectable {
+                    index: i,
+                    is_selected: false,
+                },
+            ))
+            .observe(on_click_mesh);
     }
 
+    commands.spawn(DirectionalLight::default());
+
     commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(-12.0, 15.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
         PanOrbitCamera {
             focus: Vec3::ZERO,
             button_orbit: MouseButton::Right,
             button_pan: MouseButton::Middle,
             ..default()
         },
+        MeshPickingCamera,
     ));
+}
 
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 6000.0,
-            range: 100.0,
-            ..default()
-        },
-        transform: Transform::from_xyz(0.0, 20.0, 0.0),
-        ..default()
-    });
+fn on_click_mesh(
+    click: On<Pointer<Press>>,
+    mut contexts: EguiContexts,
+    mut query: Query<&mut Selectable>,
+    mut evo_state: ResMut<state::EvoState>,
+) {
+    // Prevent clicking "through" the UI
+    if let Ok(ctx) = contexts.ctx_mut() {
+        if ctx.is_pointer_over_area() {
+            return;
+        }
+    }
+
+    if let Ok(mut selectable) = query.get_mut(click.original_event_target()) {
+        selectable.is_selected = !selectable.is_selected;
+        evo_state.fitness[selectable.index] = if selectable.is_selected { 1.0 } else { 0.0 };
+        println!(
+            "Clicked index {}: is_selected = {}",
+            selectable.index, selectable.is_selected
+        );
+    }
+}
+
+pub fn update_selection_materials(
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    query: Query<(&Selectable, &MeshMaterial3d<StandardMaterial>), Changed<Selectable>>,
+) {
+    for (selectable, mesh_material_handle) in &query {
+        if let Some(material) = materials.get_mut(&mesh_material_handle.0) {
+            println!(
+                "Updating material for index {}: is_selected = {}",
+                selectable.index, selectable.is_selected
+            );
+            material.emissive = if selectable.is_selected {
+                Color::srgb(0.6, 0.8, 1.0).into()
+            } else {
+                Color::NONE.into()
+            };
+        }
+    }
 }

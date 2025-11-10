@@ -1,11 +1,10 @@
 use bevy::prelude::*;
-use bevy_egui::EguiPlugin;
+use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 
 mod activations;
 mod evolution;
 mod generator;
-mod interaction;
 mod sculpt;
 mod state;
 mod ui;
@@ -13,9 +12,9 @@ mod ui;
 use crate::state::POPULATION_SIZE;
 
 #[derive(Component)]
-struct Selectable {
-    index: usize,
-    is_selected: bool,
+pub struct Selectable {
+    pub index: usize,
+    pub is_selected: bool,
 }
 
 fn main() {
@@ -31,24 +30,22 @@ fn main() {
                 }),
                 ..default()
             }),
-            EguiPlugin,
+            EguiPlugin::default(),
             PanOrbitCameraPlugin,
+            MeshPickingPlugin,
         ))
         .init_resource::<state::EvoState>()
         .add_systems(Startup, ui::setup_scene)
+        .add_systems(EguiPrimaryContextPass, ui::ui_system)
         .add_systems(
             Update,
             (
-                ui::ui_system,
-                interaction::raycast_system,
-                interaction::update_selection_materials,
+                ui::update_selection_materials,
                 evolution::log_activation_distribution,
+                evolution::evolve_system,
+                evolution::update_meshes_system,
             )
                 .chain(),
-        )
-        .add_systems(
-            Update,
-            (evolution::evolve_system, evolution::update_meshes_system).chain(),
         )
         .run();
 }

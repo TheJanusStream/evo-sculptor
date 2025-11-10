@@ -1,12 +1,12 @@
 [package]
 name = "evo-sculptor"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-bevy = "0.12.1"
-bevy_egui = "0.24.0"
+bevy = "0.17.2"
+bevy_egui = "0.38.0"
 bytemuck = "1.24.0"
 genetic-rs = { version = "1.0.0", features = ["crossover"] }
 neat = { version = "0.5.1", features = ["crossover"] }
-bevy_panorbit_camera = "0.10.0"
+bevy_panorbit_camera = "0.33.0"
