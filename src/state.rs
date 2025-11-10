@@ -47,7 +47,11 @@ impl Default for EvoState {
             cos_activation => ActivationScope::OUTPUT,
             gaussian_activation => ActivationScope::OUTPUT,
             abs_activation => ActivationScope::OUTPUT,
-            square_activation => ActivationScope::OUTPUT
+            square_activation => ActivationScope::OUTPUT,
+            step_activation => ActivationScope::OUTPUT,
+            clamp_activation => ActivationScope::OUTPUT,
+            pulse_activation => ActivationScope::OUTPUT,
+            staircase_activation => ActivationScope::OUTPUT
         };
 
         for genome in &mut genomes {
