@@ -34,7 +34,7 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                     )
                     .clicked()
                 {
-                    evo_state.set_changed();
+                    evo_state.redraw_requested = true;
                 }
                 if ui
                     .radio_value(
@@ -44,7 +44,7 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                     )
                     .clicked()
                 {
-                    evo_state.set_changed();
+                    evo_state.redraw_requested = true;
                 }
                 if ui
                     .radio_value(
@@ -54,7 +54,7 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                     )
                     .clicked()
                 {
-                    evo_state.set_changed();
+                    evo_state.redraw_requested = true;
                 }
                 if ui
                     .radio_value(
@@ -64,7 +64,7 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                     )
                     .clicked()
                 {
-                    evo_state.set_changed();
+                    evo_state.redraw_requested = true;
                 }
             });
         });
@@ -115,7 +115,20 @@ pub fn setup_scene(
             .observe(on_click_mesh);
     }
 
-    commands.spawn(DirectionalLight::default());
+    // Add a primary directional light to cast shadows
+    commands.spawn((
+        DirectionalLight {
+            illuminance: 10000.0, // A bright, sun-like intensity
+            ..default()
+        },
+        Transform {
+            // Position the light to cast interesting shadows from an angle
+            translation: Vec3::new(10.0, 10.0, 10.0),
+            rotation: Quat::from_rotation_x(-std::f32::consts::PI / 4.)
+                * Quat::from_rotation_y(-std::f32::consts::PI / 4.),
+            ..default()
+        },
+    ));
 
     commands.spawn((
         PanOrbitCamera {

@@ -10,7 +10,7 @@ pub struct SculptMeshData {
 pub fn create_sculpt_mesh(
     image: &egui::ColorImage,
     size: f32,
-    _stitching_type: StitchingType,
+    stitching_type: StitchingType,
 ) -> SculptMeshData {
     let width = image.width();
     let height = image.height();
@@ -26,17 +26,83 @@ pub fn create_sculpt_mesh(
         })
         .collect();
 
-    let mut indices: Vec<u32> = Vec::with_capacity((width - 1) * (height - 1) * 6);
-    for y in 0..(height - 1) {
-        for x in 0..(width - 1) {
-            let base = (y * width + x) as u32;
-            indices.push(base);
-            indices.push(base + width as u32);
-            indices.push(base + 1);
+    let mut indices: Vec<u32> = match stitching_type {
+        StitchingType::Plane => Vec::with_capacity((width - 1) * (height - 1) * 6),
+        StitchingType::Sphere => Vec::with_capacity((width) * (height) * 6),
+        StitchingType::Cylinder => Vec::with_capacity((width) * (height - 1) * 6),
+        StitchingType::Torus => Vec::with_capacity((width) * (height) * 6),
+    };
 
-            indices.push(base + 1);
-            indices.push(base + width as u32);
-            indices.push(base + width as u32 + 1);
+    match stitching_type {
+        // No stitching
+        StitchingType::Plane => {
+            for y in 0..(height - 1) {
+                for x in 0..(width - 1) {
+                    insert_quad(
+                        &mut indices,
+                        y * width + x,
+                        y * width + x + width,
+                        y * width + x + 1,
+                        y * width + x + width + 1,
+                    );
+                }
+            }
+        }
+        StitchingType::Sphere => {
+            // Cap Bottom
+            for x in 0..width {
+                insert_quad(&mut indices, 0, width + x, 0, width + ((x + 1) % width));
+            }
+            // Stitching right to left
+            for y in 0..(height - 1) {
+                for x in 0..width {
+                    insert_quad(
+                        &mut indices,
+                        y * width + x,
+                        y * width + x + width,
+                        y * width + ((x + 1) % width),
+                        y * width + width + ((x + 1) % width),
+                    );
+                }
+            }
+            // Cap Top
+            for x in 0..width {
+                insert_quad(
+                    &mut indices,
+                    (height - 2) * width + x,
+                    (height - 2) * width + width,
+                    (height - 2) * width + ((x + 1) % width),
+                    (height - 2) * width + width,
+                );
+            }
+        }
+        StitchingType::Cylinder => {
+            // Stitching right to left
+            for y in 0..(height - 1) {
+                for x in 0..width {
+                    insert_quad(
+                        &mut indices,
+                        y * width + x,
+                        y * width + x + width,
+                        y * width + ((x + 1) % width),
+                        y * width + width + ((x + 1) % width),
+                    );
+                }
+            }
+        }
+        StitchingType::Torus => {
+            // Stitching Right to Reft & Top to Bottom
+            for y in 0..height {
+                for x in 0..width {
+                    insert_quad(
+                        &mut indices,
+                        y * width + x,
+                        (((y + 1) * width) % (height * width)) + x,
+                        y * width + ((x + 1) % width),
+                        (((y + 1) * width) % (height * width)) + ((x + 1) % width),
+                    );
+                }
+            }
         }
     }
 
@@ -44,4 +110,14 @@ pub fn create_sculpt_mesh(
         vertices: base_vertices,
         indices: bevy::mesh::Indices::U32(indices),
     }
+}
+
+fn insert_quad(indices: &mut Vec<u32>, a: usize, b: usize, c: usize, d: usize) {
+    indices.push(a as u32);
+    indices.push(b as u32);
+    indices.push(c as u32);
+
+    indices.push(c as u32);
+    indices.push(b as u32);
+    indices.push(d as u32);
 }
