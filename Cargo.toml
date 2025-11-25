@@ -10,3 +10,18 @@ bytemuck = "1.24.0"
 genetic-rs = { version = "1.0.0", features = ["crossover"] }
 neat = { version = "0.5.1", features = ["crossover"] }
 bevy_panorbit_camera = "0.33.0"
+image = { version = "0.25.9", default-features = false, features = ["tga"] }
+rfd = "0.16.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { version = "0.3.82", features = [
+    "Document",
+    "Window",
+    "HtmlElement",
+    "HtmlAnchorElement",
+    "Blob",
+    "Url",
+    "BlobPropertyBag"
+] }
+wasm-bindgen = "0.2.105"
+js-sys = "0.3.82"

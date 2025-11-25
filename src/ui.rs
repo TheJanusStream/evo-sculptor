@@ -1,9 +1,10 @@
+use crate::{Selectable, generator, io, sculpt, state};
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 use bevy_panorbit_camera::PanOrbitCamera;
-
-use crate::{Selectable, generator, sculpt, state};
+use image::{DynamicImage, ImageBuffer, Rgba, imageops::FilterType};
+use std::io::Cursor;
 
 pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoState>) {
     if let Ok(ctx) = contexts.ctx_mut() {
@@ -21,6 +22,49 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                 }
                 if ui.button("Log Activations").clicked() {
                     evo_state.debug_requested = true;
+                }
+
+                if ui.button("Export Selected").clicked() {
+                    // 1. Find the selected genome/image
+                    if let Some((index, _)) = evo_state
+                        .fitness
+                        .iter()
+                        .enumerate()
+                        .find(|&(_, &f)| f > 0.0)
+                    {
+                        let topology = &evo_state.genomes[index];
+
+                        // 2. Re-generate the image (or retrieve it if you cached it)
+                        let bevy_image = crate::generator::generate_image_from_topology(topology);
+
+                        // 3. Convert Bevy Image to TGA bytes
+                        // Note: ColorImage pixels are [r, g, b, a] bytes
+                        let width = bevy_image.size[0] as u32;
+                        let height = bevy_image.size[1] as u32;
+
+                        let raw_data = bevy_image.as_raw().to_vec();
+
+                        if let Some(buffer) =
+                            ImageBuffer::<Rgba<u8>, _>::from_raw(width, height, raw_data)
+                        {
+                            // Convert to DynamicImage for easy resizing
+                            let dynamic_image = DynamicImage::ImageRgba8(buffer);
+
+                            // Resize to 64x64 using Nearest Neighbor (No interpolation/blur)
+                            let resized_image =
+                                dynamic_image.resize_exact(64, 64, FilterType::Nearest);
+
+                            let mut bytes: Vec<u8> = Vec::new();
+
+                            // Write TGA to the byte vector
+                            resized_image
+                                .write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Tga)
+                                .unwrap();
+
+                            // 4. Call our cross-platform saver
+                            io::save_sculpt_map(bytes, &format!("sculpt_genome_{}.tga", index));
+                        }
+                    }
                 }
             });
             ui.separator();

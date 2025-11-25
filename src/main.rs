@@ -5,6 +5,7 @@ use bevy_panorbit_camera::PanOrbitCameraPlugin;
 mod activations;
 mod evolution;
 mod generator;
+mod io;
 mod sculpt;
 mod state;
 mod ui;
