@@ -51,7 +51,12 @@ jobs:
       - name: Assemble Site
         run: |
           cp index.html ./dist/
-          cp -r assets ./dist/
+          if [ -d "assets" ]; then
+            cp -r assets ./dist/
+          else
+            echo "Assets folder not found in source (likely empty), creating empty folder in dist."
+            mkdir -p ./dist/assets
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
