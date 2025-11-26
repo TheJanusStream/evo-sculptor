@@ -36,6 +36,8 @@
     <script type="module">
         import init from './evo-sculptor.js';
 
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
         async function run() {
             try {
                 await init();
