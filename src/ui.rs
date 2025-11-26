@@ -20,10 +20,9 @@ pub fn ui_system(mut contexts: EguiContexts, mut evo_state: ResMut<state::EvoSta
                     println!("Reset button clicked! Generating new random population.");
                     *evo_state = state::EvoState::default();
                 }
-                if ui.button("Log Activations").clicked() {
-                    evo_state.debug_requested = true;
-                }
-
+                //if ui.button("Log Activations").clicked() {
+                //    evo_state.debug_requested = true;
+                //}
                 if ui.button("Export Selected").clicked() {
                     // 1. Find the selected genome/image
                     if let Some((index, _)) = evo_state
