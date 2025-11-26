@@ -46,7 +46,7 @@ jobs:
             target/wasm32-unknown-unknown/release/evo-sculptor.wasm
 
       - name: Optimize WASM
-        run: wasm-opt -Oz -o ./dist/evo_sculptor_bg.wasm ./dist/evo_sculptor_bg.wasm
+        run: wasm-opt -Oz -o ./dist/evo-sculptor_bg.wasm ./dist/evo-sculptor_bg.wasm
 
       - name: Assemble Site
         run: |
