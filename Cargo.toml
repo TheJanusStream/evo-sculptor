@@ -14,6 +14,7 @@ image = { version = "0.25.9", default-features = false, features = ["tga"] }
 rfd = "0.16.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 web-sys = { version = "0.3.82", features = [
     "Document",
     "Window",
