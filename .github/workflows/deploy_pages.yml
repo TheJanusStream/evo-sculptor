@@ -43,7 +43,7 @@ jobs:
           wasm-bindgen --out-dir ./dist --target web \
             --out-name evo-sculptor \
             --no-typescript \
-            target/wasm32-unknown-unknown/release/evo_sculptor.wasm
+            target/wasm32-unknown-unknown/release/evo-sculptor.wasm
 
       - name: Optimize WASM
         run: wasm-opt -Oz -o ./dist/evo_sculptor_bg.wasm ./dist/evo_sculptor_bg.wasm
