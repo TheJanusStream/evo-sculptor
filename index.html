@@ -10,7 +10,6 @@
             margin: 0;
             background-color: #222;
             overflow: hidden;
-            /* Hide scrollbars */
             height: 100vh;
             width: 100vw;
         }
@@ -19,7 +18,6 @@
             display: block;
         }
 
-        /* Optional: Loading text styling */
         #loading {
             color: white;
             font-family: monospace;
@@ -36,13 +34,11 @@
 <body>
     <div id="loading">Forging WASM...</div>
     <script type="module">
-        // We will configure the workflow to output 'evo-sculptor.js'
         import init from './evo-sculptor.js';
 
         async function run() {
             try {
                 await init();
-                // Hide loading text once initialized
                 document.getElementById('loading').style.display = 'none';
             } catch (e) {
                 console.error("Failed to initialize game:", e);

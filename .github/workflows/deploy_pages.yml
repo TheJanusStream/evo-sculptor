@@ -26,7 +26,6 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      # Explicitly install the version matching Cargo.toml to prevent mismatches
       - name: Install wasm-bindgen-cli
         run: cargo install wasm-bindgen-cli --version 0.2.105
 
@@ -37,12 +36,9 @@ jobs:
           echo "$(pwd)/binaryen-version_117/bin" >> $GITHUB_PATH
 
       - name: Build WASM
-        # Release profile for small size
         run: cargo build --release --target wasm32-unknown-unknown
 
       - name: Generate JS Bindings
-        # --out-name sets the filename to 'evo-sculptor.js' to match index.html
-        # Note: cargo build creates 'evo_sculptor.wasm' (underscores), we bind it here
         run: |
           wasm-bindgen --out-dir ./dist --target web \
             --out-name evo-sculptor \
@@ -50,13 +46,11 @@ jobs:
             target/wasm32-unknown-unknown/release/evo_sculptor.wasm
 
       - name: Optimize WASM
-        # drastically reduces file size (often 50%+)
         run: wasm-opt -Oz -o ./dist/evo_sculptor_bg.wasm ./dist/evo_sculptor_bg.wasm
 
       - name: Assemble Site
         run: |
           cp index.html ./dist/
-          # Bevy looks for an 'assets' folder relative to the binary/wasm
           cp -r assets ./dist/
 
       - name: Setup Pages
