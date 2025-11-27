@@ -1,3 +1,4 @@
+// src/main.rs
 use bevy::prelude::*;
 use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
@@ -9,8 +10,6 @@ mod io;
 mod sculpt;
 mod state;
 mod ui;
-
-use crate::state::POPULATION_SIZE;
 
 #[derive(Component)]
 pub struct Selectable {
@@ -36,7 +35,8 @@ fn main() {
             MeshPickingPlugin,
         ))
         .init_resource::<state::EvoState>()
-        .add_systems(Startup, ui::setup_scene)
+        .add_systems(Startup, ui::setup_camera_lights)
+        .add_systems(Update, ui::spawn_grid_system)
         .add_systems(EguiPrimaryContextPass, ui::ui_system)
         .add_systems(
             Update,

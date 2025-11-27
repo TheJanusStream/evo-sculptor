@@ -55,7 +55,6 @@ pub fn staircase_activation(n: f32) -> f32 {
 
 /// This function will be called once at startup to register our new functions.
 pub fn register_custom_activations() {
-    println!("Registering custom activation functions...");
     batch_register_activation(activation_fn! {
         sin_activation => ActivationScope::HIDDEN | ActivationScope::OUTPUT,
         cos_activation => ActivationScope::HIDDEN | ActivationScope::OUTPUT,
@@ -67,5 +66,4 @@ pub fn register_custom_activations() {
         pulse_activation => ActivationScope::HIDDEN | ActivationScope::OUTPUT,
         staircase_activation => ActivationScope::HIDDEN | ActivationScope::OUTPUT
     });
-    println!("Custom activation functions registered.");
 }

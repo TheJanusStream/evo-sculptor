@@ -4,7 +4,7 @@ use neat::rand::Rng;
 use std::collections::HashMap;
 use std::mem;
 
-use crate::{POPULATION_SIZE, Selectable, generator, sculpt, state};
+use crate::{Selectable, generator, sculpt, state};
 
 pub fn log_activation_distribution(mut evo_state: ResMut<state::EvoState>) {
     if !evo_state.debug_requested {
@@ -55,21 +55,16 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
     if !evo_state.evolution_requested {
         return;
     }
-    println!("Evolving generation {}...", evo_state.generation);
-
+    let target_pop_size = evo_state.get_population_size();
     let genomes = mem::take(&mut evo_state.genomes);
     let fitnesses = mem::take(&mut evo_state.fitness);
-
     let population_with_fitness: Vec<_> = genomes.into_iter().zip(fitnesses).collect();
-
     let champions: Vec<_> = population_with_fitness
         .iter()
         .filter(|(_, fitness)| *fitness > 0.0)
         .map(|(genome, _)| genome.clone())
         .collect();
-
     let parents = if champions.is_empty() {
-        println!("No champions selected! Using the entire previous generation as parents.");
         population_with_fitness
             .into_iter()
             .map(|(genome, _)| genome)
@@ -78,9 +73,9 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
         champions
     };
     let mut rng = neat::rand::thread_rng();
-    let mut next_generation = Vec::with_capacity(POPULATION_SIZE);
+    let mut next_generation = Vec::with_capacity(target_pop_size);
 
-    while next_generation.len() < POPULATION_SIZE {
+    while next_generation.len() < target_pop_size {
         let parent1 = &parents[rng.gen_range(0..parents.len())];
         let parent2 = &parents[rng.gen_range(0..parents.len())];
 
@@ -90,14 +85,9 @@ pub fn evolve_system(mut evo_state: ResMut<state::EvoState>) {
 
     evo_state.genomes = next_generation;
     evo_state.generation += 1;
-    evo_state.fitness = vec![0.0; POPULATION_SIZE];
+    evo_state.fitness = vec![0.0; target_pop_size];
     evo_state.evolution_requested = false;
     evo_state.redraw_requested = true;
-
-    println!(
-        "Evolution complete. Now at generation {}.",
-        evo_state.generation
-    );
 }
 
 pub fn update_meshes_system(
@@ -107,7 +97,6 @@ pub fn update_meshes_system(
 ) {
     if evo_state.redraw_requested
     {
-        println!("Updating meshes for new generation...");
         for (mut selectable, mesh_handle) in query.iter_mut() {
             if let Some(mesh) = meshes.get_mut(mesh_handle) {
                 let new_topology = &evo_state.genomes[selectable.index];
